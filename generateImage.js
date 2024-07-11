@@ -69,7 +69,7 @@ context.textBaseline = "top";
 
 //Base font size and type
 fontSize = 250;
-context.font = "250px EnduranceW01";
+context.font = "250px EnduranceW01-Black";
 
 //text style
 ctx.fillStyle = "black"
@@ -86,11 +86,11 @@ context.font = "300px EnduranceW01";
 ctx.fillStyle = "black"
 ctx.textAlign = "center"
 
-//Calling textAdjust function to fix mememauthor and printing memeauthor
+//Calling textAdjust function to fix memeauthor and printing memeauthor
 memeUser = textAdjust("EnduranceW01-Black", 2500, 500, memeUser)
 ctx.fillText(memeUser, 1057, 1742)
 
-    //Creates and names the attachement
+    //Creates and names the attachment
     const attachment = new Discord.AttachmentBuilder(canvas.toBuffer(), loseitUserName + "moment.png");
     attachment.setName(loseitUserName + "moment.png")
     console.log("Returning image!")
