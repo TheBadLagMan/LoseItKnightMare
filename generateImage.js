@@ -68,7 +68,7 @@ context.textBaseline = "top";
 //Base font size and type
 //Note that font has to be installed on system/project folder and that naming may be different between Windows and Linux
 fontSize = 250;
-context.font = "250px Endurance_W01-Black";
+context.font = "250px EnduranceW01-Black";
 
 //text style
 //The alignment is relative to the x value of the fillText() method. 
@@ -86,10 +86,10 @@ memeText = textAdjust("EnduranceW01-Black", 2000, 1534, memeText)
 //1665 is the sweetspot for now
 context.fillText(memeText, 1665, 148, 1250);
 
-//Resets font after memetext is filled
+//Resets font after memetext is filled, is smaller for the author name
 context.textBaseline = "top";
-fontSize = 300;
-context.font = "300px EnduranceW01-Black";
+fontSize = 200;
+context.font = "200px EnduranceW01-Black";
 ctx.textAlign = "center"
 
 //Calling textAdjust function to fix mememauthor and printing memeauthor
