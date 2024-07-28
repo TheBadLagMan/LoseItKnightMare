@@ -1,6 +1,7 @@
 const Canvas = require("canvas")
 const Discord = require("discord.js")
-const { AttachmentBuilder, Client, Events, GatewayIntentBits } = require('discord.js');
+const { GatewayIntentBits } = require('discord.js');
+const loseitButton = require("../buttons/loseitButton.js");
 require("dotenv").config()
 
 const client = new Discord.Client({
@@ -12,7 +13,7 @@ const client = new Discord.Client({
   })
 
 //Background for meme post, update template to be blank before final release
-const background = './commands/loseitpost/loseitphotos/loseitPostBackground.png';
+const background = "./commands/postreply/loseitphotos/loseitPostBackground.png";
 
 //Dimensions of the canvas
 const dim = {
@@ -30,9 +31,6 @@ const av = {
 }
 
 const generateImage = async (loseitText, loseitUser, loseitUserName, interaction) => {
-//console.log("Received message is " + loseitText);
-//console.log("Received user is " + loseitUser);
-//console.log("Received username is " + loseitUserName);
 
 memeText = loseitText;    
 memeUser = "-" + loseitUserName;
@@ -68,40 +66,55 @@ var context = canvas.getContext("2d");
 context.textBaseline = "top";
 
 //Base font size and type
+//Note that font has to be installed on system/project folder and that naming may be different between Windows and Linux
 fontSize = 250;
-context.font = "250px EnduranceW01-Black";
+context.font = "250px Endurance_W01-Black";
 
 //text style
-ctx.fillStyle = "black"
-ctx.textAlign = "center"
+//The alignment is relative to the x value of the fillText() method. 
+//For example, if textAlign is "center", then the text's left edge will be at x - (textWidth / 2).
+ctx.textAlign = "center";
 
 //Calling textAdjust function to fix memetext and printing memetext
 memeText = textAdjust("EnduranceW01-Black", 2000, 1534, memeText)
-context.fillText(memeText, 1658, 148, 1200);
+//See: https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/fillText for documentation
+//on context.filltext. Syntax is text, x, y, and an optional max width before text shrinking occurs
+//The width of the canvas is about 1250 pixels, set fill text width it to 1300 as
+//The textadjust function will create spaces as needed to avoid cutoff before compressions
 
-//Resets font after text is filled
+//1658, 148, 1250 og values
+//1665 is the sweetspot for now
+context.fillText(memeText, 1665, 148, 1250);
+
+//Resets font after memetext is filled
 context.textBaseline = "top";
 fontSize = 300;
-context.font = "300px EnduranceW01";
-ctx.fillStyle = "black"
+context.font = "300px EnduranceW01-Black";
 ctx.textAlign = "center"
 
-//Calling textAdjust function to fix memeauthor and printing memeauthor
+//Calling textAdjust function to fix mememauthor and printing memeauthor
 memeUser = textAdjust("EnduranceW01-Black", 2500, 500, memeUser)
 ctx.fillText(memeUser, 1057, 1742)
 
-    //Creates and names the attachment
-    const attachment = new Discord.AttachmentBuilder(canvas.toBuffer(), loseitUserName + "moment.png");
-    attachment.setName(loseitUserName + "moment.png")
-    console.log("Returning image!")
+//Creates and names the attachement
+const attachment = new Discord.AttachmentBuilder(canvas.toBuffer(), loseitUserName + "moment.png");
+attachment.setName(loseitUserName + "moment.png")
 
-    //Edits the deferred interaction to finally respond with the attachment
-    await interaction.editReply({files: [attachment]})
+//Edits the deferred interaction to finally respond with the attachment
+await interaction.editReply({content: '', files: [attachment]})
 
+//The interaction is fully acknowledged, now the message component is used for the button event to create a new one
+//This adds the button only after the interaction reply is edited to include the image
 
+const message = await interaction.fetchReply()
+const loseitLink = await message.attachments.first().url;
+//Sends over the message object, userid of the person who triggered the original command, and url of photo
+await loseitButton(message, loseitLink)
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //New text Adjust function for both memetext and memeauthor
 //Parameters are fontface, boxwidth, and descent
-//The boundaries will now be a percentage of boxwidth 15% for forced newline, 55% for replacing space with newline
+//The boundaries will now be a percentage of boxwidth 20% for forced newline, 60% for replacing space with newline
 function textAdjust(fontface, width, descent, s)
 {
     var FINISHED = false
@@ -114,10 +127,9 @@ function textAdjust(fontface, width, descent, s)
         {          
             //Reduces available width by the width of the current character
             boxWidth -= context.measureText(s.charAt(i)).width
-            //console.log("Remaining boxwidth is: " + boxWidth)
 
             //Replaces space with newline if little width remaining
-            if ((boxWidth < (0.55*width)) && ((s.charAt(i) == " ")))
+            if ((boxWidth < (0.60*width)) && ((s.charAt(i) == " ")))
             {
 
                 //Replaces current char with newline if it's a space
@@ -126,17 +138,12 @@ function textAdjust(fontface, width, descent, s)
                 
                 s = s.slice(0, i) + "\n" + s.slice(i+1, s.length);
                 boxWidth = width;
-                //Debugging
-                //console.log("Current char is space, turned newline at char " + i);     
             }
 
             //Force adds a newline in front of character if no boxwidth remaining.
-            else if((boxWidth < (0.15*width)))
+            else if((boxWidth < (0.20*width)))
             {
                 s = s.slice(0, i+1) + "\n" + s.slice(i+1, s.length);
-                //Debugging
-                //console.log("Newline forcefully added after char " + i);
-                //Debugging
                 boxWidth = width;
             }
            
@@ -144,10 +151,7 @@ function textAdjust(fontface, width, descent, s)
             //The loop is reset so there is no awkward spacing            
             while (ctx.measureText(s).actualBoundingBoxDescent > descent)
                 {
-                    //Debugging
-                    //console.log("fontsize is " + fontSize);
                     fontSize -= 5;
-                    //console.log("Fontsize is: " + fontSize)
                     context.font = fontSize + "px " + fontface;
                     i = 0;
                     s = r;
@@ -166,5 +170,6 @@ function textAdjust(fontface, width, descent, s)
 
 //Exports image
 module.exports = generateImage
+
 //Bot token from .env file
 client.login(process.env.TOKEN)

@@ -1,2 +1,2 @@
 # LoseItKnightMare
-Basic code to make a meme out of a quote. 
+A bot to make basic memes out of quotes. Created by TheBadLagMan

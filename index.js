@@ -1,8 +1,5 @@
-/*
-Command handler for bot
-Commented out console.log statements across the .js files are for debugging
-Will not be removed in case emergency fixes are needed
-*/
+/*Command handler for bot
+Commented out statements across the .js files are for documentation*/
 
 const Discord = require("discord.js")
 require("dotenv").config()
@@ -10,7 +7,9 @@ require("dotenv").config()
 //Below code is for slash commands
 const fs = require('node:fs');
 const path = require('node:path');
-const { Client, Collection, Events, GatewayIntentBits } = require('discord.js');
+const { Collection, Events, GatewayIntentBits } = require('discord.js');
+//Note the ./means within current directory, and ../ means going one file up from current directory
+const loseitDelete = require("./commands/buttons/loseitDelete")
 
 //Bot intents needed to function in public servers
 const client = new Discord.Client({
@@ -49,18 +48,35 @@ client.once(Events.ClientReady, () => {
 
 client.on(Events.InteractionCreate, async interaction => {
 
-//If command is not from chat or right-click context menu, it is ignored
-	if (!interaction.isChatInputCommand() && !interaction.isContextMenuCommand()) return;
+//If command is not from chat, right-click context menu or button, it is ignored
+	if (!interaction.isChatInputCommand() && !interaction.isContextMenuCommand() && !interaction.isButton()) return;
 	const command = client.commands.get(interaction.commandName);
 
+//Listener for button commands, if the delete command is detected, loseitDelete.js is used to determine
+//Whether or not the message can be deleted
+	if(interaction.isButton()) {
+        if(interaction.customId == 'loseitdelete') {
+			try {
+				await loseitDelete(interaction)
+			} catch (error)  {
+				console.error(error);
+				//Deletes the error message, kills the bot, and force restarts it if an error occurs
+				console.log("Error has occurred, restarting bot!")
+				await interaction.reply({ content: '**THERE WAS A FATAL ERROR WITH THE ISSUED COMMAND! RESTARTING BOT!**', ephemeral: true });
+				setTimeout(() => interaction.deleteReply(), 5000);            
+				client.login(process.env.TOKEN);
+			}
+        }
+    }
+
 	if (!command){
-		console.error(`No command matching ${interaction.commandName} was found.`);
+		//This line keeps popping up when I use my button, so it's commented out
+		//console.error(`No command matching ${interaction.commandName} was found.`);
 		return;
 	}
 
 //Code for cooldowns
 	const { cooldowns } = interaction.client;
-
 	if (!cooldowns.has(command.data.name)) {
 		cooldowns.set(command.data.name, new Collection());
 	}
@@ -85,20 +101,12 @@ client.on(Events.InteractionCreate, async interaction => {
 //Code for executing commands
 	try {
 		await command.execute(interaction);
-
 	} catch (error) {
 		console.error(error);
-		if (interaction.replied || interaction.deferred) {
-			await interaction.followUp({ content: 'There was an error while executing this command!', ephemeral: true });
-		} else {
-			await interaction.deferReply({ content: 'There was an error while executing this command!', ephemeral: true });
-		}
-		
 		//Deletes the error message, kills the bot, and force restarts it if an error occurs
 		console.log("Error has occurred, restarting bot!")
-		await interaction.followUp({ content: '**THERE WAS A FATAL ERROR WITH THE ISSUED COMMAND! RESTARTING BOT!**', ephemeral: true });
+		await interaction.reply({ content: '**THERE WAS A FATAL ERROR WITH THE ISSUED COMMAND! RESTARTING BOT!**', ephemeral: true });
 		setTimeout(() => interaction.deleteReply(), 5000);            
-		//await client.destroy();
 		client.login(process.env.TOKEN);
 	}
 });

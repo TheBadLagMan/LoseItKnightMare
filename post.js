@@ -1,15 +1,13 @@
-/*
-post command to create a meme post.
+/*post command to create a meme post.
 Interaction is forwarded to getNameFromMention.js
-to convert author id/ping to username and pfp
-*/ 
+to convert author id/ping to username and pfp*/ 
 
 const Discord = require("discord.js");
 require("dotenv").config()
 const { SlashCommandBuilder } = require('discord.js');
 const getNameFromMention = require("./getNameFromMention")
 
-const { Client, Collection, Events, GatewayIntentBits } = require('discord.js');
+const { GatewayIntentBits } = require('discord.js');
 const client = new Discord.Client({
     intents: [
       GatewayIntentBits.Guilds,
@@ -23,22 +21,29 @@ module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('post')
 		.setDescription('Turn a quote into a meme [UserID/Ping] [Memetext] [Name if different from Discord name]')
-        .addStringOption(option =>
-            option.setName('author')
-                .setDescription('Ping the quoted user or type their user id. Determines name and pfp')
-                .setRequired(true))
-        .addStringOption(option => 
-            option.setName('memetext')
-                .setDescription('This is the quoted text, the one you are making a meme out of')
-                .setRequired(true))
-        .addStringOption(option => 
-              option.setName('manualauthorname')
-                .setDescription('You can manually change the author name to be different from their Discord name (OPTIONAL)')
-                .setRequired(false)),        
+
+    //.addUserOption allows selection of a server member from the menu, or a user id can be entered.
+    //Functionally it is the same as .addStringOption but is more intutitive as it provides a menu to select users from.
+    //It also forces a user to be selected or an id to be entered. Invalid characters are automatically blocked by this option
+      .addUserOption(option =>
+        option.setName('author')
+            .setDescription('Select/ping the quoted user or type their user id. Determines name and pfp')
+            .setRequired(true))
+
+      .addStringOption(option => 
+        option.setName('memetext')
+            .setDescription('This is the quoted text, the one you are making a meme out of')
+            .setRequired(true))
+
+      .addStringOption(option => 
+        option.setName('manualauthorname')
+            .setDescription('You can manually change the author name to be different from their Discord name (OPTIONAL)')
+            //Max length is 128. If URL size > 512 than the link to view in browser cannot be used hence this limitation.
+            .setMaxLength(128)
+            .setRequired(false)),        
 
   async execute(interaction) {
     //Post and reply commands are deferred to allow for > 3 second response time
-    //console.log("Post command has been used!")
     await interaction.deferReply()
     await getNameFromMention(interaction)
   }
